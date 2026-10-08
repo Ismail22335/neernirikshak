@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeerNirikshak — NextGen IoT Water Telemetry & AI Outbreak Intelligence</title>
+  <meta name="description" content="ESP32-powered IoT water quality monitoring with dual-stage machine learning outbreak prediction and community health surveillance">
+
+  <!-- Distinctive High-End Typography: Sora + DM Sans + Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+
+  <!-- Dynamic Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%2300f2fe'/><stop offset='100%' stop-color='%234facfe'/></linearGradient></defs><circle cx='50' cy='50' r='48' fill='%23060d1f'/><path d='M50 20 C50 20 28 50 28 66 C28 78 38 88 50 88 C62 88 72 78 72 66 C72 50 50 20 50 20 Z' fill='url(%23g)'/></svg>">
+</head>
+<body class="theme-dark">
+
+  <!-- Ambient Glow Canvas & Background FX -->
+  <div class="ambient-background">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+    <div class="grid-overlay"></div>
+    <div class="scanline"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       NAVIGATION HUD
+       ══════════════════════════════════════════════════════════════════════ -->
+  <header class="header-hud">
+    <nav class="navbar" id="navbar">
+      <div class="nav-brand">
+        <div class="brand-avatar">
+          <svg class="brand-water-icon" viewBox="0 0 36 36" fill="none">
+            <path d="M18 4C18 4 6 19 6 25C6 31.6 11.4 36 18 36C24.6 36 30 31.6 30 25C30 19 18 4 18 4Z" fill="url(#brandGrad)"/>
+            <path d="M18 10C18 10 10 21 10 25C10 29.4 13.6 32 18 32C22.4 32 26 29.4 26 25C26 21 18 10 18 10Z" fill="white" opacity="0.15"/>
+            <circle cx="15" cy="23" r="2.5" fill="white" opacity="0.6"/>
+            <defs>
+              <linearGradient id="brandGrad" x1="6" y1="4" x2="30" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00F2FE"/>
+                <stop offset="1" stop-color="#4FACFE"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="brand-pulse-ring"></div>
+        </div>
+        <div class="brand-info">
+          <div class="brand-title-wrap">
+            <h1 class="brand-name">NEER<span class="brand-highlight">NIRIKSHAK</span></h1>
+            <span class="telemetry-badge">v2.5 AI-PRO</span>
+          </div>
+          <span class="brand-subtitle">IoT Water Quality Telemetry & Outbreak Intelligence</span>
+        </div>
+      </div>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#dashboard" class="nav-link active" data-section="dashboard">
+          <span class="nav-icon">⚡</span> Dashboard
+        </a>
+        <a href="#pipeline" class="nav-link" data-section="pipeline">
+          <span class="nav-icon">🧬</span> ML Pipeline
+        </a>
+        <a href="#sensors" class="nav-link" data-section="sensors">
+          <span class="nav-icon">📡</span> Sensors
+        </a>
+        <a href="#surveillance" class="nav-link" data-section="surveillance">
+          <span class="nav-icon">🏥</span> Surveillance
+        </a>
+        <a href="#analysis" class="nav-link" data-section="analysis">
+          <span class="nav-icon">🔬</span> Risk Engine
+        </a>
+        <a href="#predict" class="nav-link" data-section="predict">
+          <span class="nav-icon">🎯</span> Simulator
+        </a>
+        <a href="#datalab" class="nav-link" data-section="datalab">
+          <span class="nav-icon">📊</span> Data Lab
+        </a>
+      </div>
+
+      <!-- Live Connectivity Telemetry Bar -->
+      <div class="nav-actions">
+        <div class="telemetry-pill" id="telemetryPill">
+          <div class="status-indicator">
+            <span class="ping-circle" id="pingCircle"></span>
+            <span class="status-dot live" id="statusDot"></span>
+          </div>
+          <div class="telemetry-status-text">
+            <div class="telemetry-mode" id="statusText">CONNECTING…</div>
+            <div class="telemetry-node" id="statusNode">ESP32-NODE · RTDB</div>
+          </div>
+          <div class="telemetry-latency" id="telemetryLatency">42ms</div>
+        </div>
+
+        <button class="audio-toggle-btn" id="audioToggle" title="Toggle telemetry acoustic FX" aria-label="Toggle Sound">
+          <span class="audio-icon" id="audioIcon">🔊</span>
+        </button>
+
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="main-content">
+
+    <!-- Demo Mode Fallback Alert (Hidden when Live) -->
+    <div class="demo-banner" id="demoBanner">
+      <div class="banner-content">
+        <span class="banner-pulse"></span>
+        <span class="banner-text"><strong>SIMULATION MODE</strong> — Operating with historical benchmark stream. Connect Firebase credentials for live hardware stream.</span>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 1: DASHBOARD HERO BENTO GRID
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="dashboard" class="section hero-bento-section">
+
+      <!-- Section Title & Live Context Pill -->
+      <div class="hero-header">
+        <div class="header-titles">
+          <div class="tag-row">
+            <span class="hud-pill"><span class="dot-beacon"></span> LIVE HYDRO TELEMETRY</span>
+            <span class="hud-pill purple"><span class="dot-beacon purple"></span> 2-STAGE RANDOM FOREST ACTIVE</span>
+            <span class="hud-pill blue" id="activeWardPill">📍 WARD: NERUL (CLUSTER MONITOR)</span>
+          </div>
+          <h2 class="hero-headline">Autonomous Water Potability & Epidemic Early-Warning</h2>
+          <p class="hero-subline">Real-time ESP32 edge sensing streamed over Firebase RTDB, correlated with community clinical symptoms from Firestore for predictive outbreak prevention.</p>
+        </div>
+
+        <!-- Master Outbreak Threat Badge -->
+        <div class="master-outbreak-card low" id="outbreakBadge">
+          <div class="badge-corner corner-tl"></div>
+          <div class="badge-corner corner-tr"></div>
+          <div class="badge-corner corner-bl"></div>
+          <div class="badge-corner corner-br"></div>
+          <div class="badge-header">
+            <span class="hud-mini-label">EPIDEMIC THREAT LEVEL</span>
+            <span class="badge-live-tag">LIVE FEED</span>
+          </div>
+          <div class="badge-main">
+            <div class="badge-icon-wrap" id="badgeIconWrap">
+              <span class="badge-icon" id="badgeIcon">🛡️</span>
+            </div>
+            <div class="badge-text-group">
+              <div class="badge-level" id="badgeLevel">SAFE</div>
+              <div class="badge-prob" id="badgeProb">12.4% Probability</div>
+            </div>
+          </div>
+          <div class="badge-footer">
+            <span class="badge-status-dot"></span>
+            <span id="badgeSubStatus">Normal potable baseline verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Grid: Interactive Hydro-Chamber + 4 Telemetry Metrics -->
+      <div class="bento-grid">
+
+        <!-- Bento Cell 1: Physical Hydro-Chamber Chamber Visualizer -->
+        <div class="bento-cell chamber-cell glass-card">
+          <div class="card-glow-highlight"></div>
+          <div class="chamber-header">
+            <div class="chamber-title-wrap">
+              <span class="tech-label">ESP32 SENSOR CELL // TANK 01</span>
+              <h3 class="cell-title">Live Hydro-Optical Chamber</h3>
+            </div>
+            <div class="chamber-status-tag" id="chamberStatusTag">
+              <span class="fluid-dot"></span>
+              <span id="chamberStatusText">SAMPLE OPTICAL: CLEAR</span>
+            </div>
+          </div>
+
+          <div class="chamber-visual-stage">
+            <!-- Simulated Glass Flask / Telemetry Column -->
+            <div class="flask-container">
+              <div class="flask-glass" id="flaskGlass">
+                <div class="fluid-body" id="fluidBody">
+                  <div class="fluid-wave wave-1"></div>
+                  <div class="fluid-wave wave-2"></div>
+                  <div class="fluid-deep"></div>
+                  <!-- Dynamic Particles / Bubbles -->
+                  <div class="bubble b1"></div>
+                  <div class="bubble b2"></div>
+                  <div class="bubble b3"></div>
+                  <div class="bubble b4"></div>
+                  <div class="bubble b5"></div>
+                  <div class="turbidity-particulates" id="turbidityParticulates"></div>
+                </div>
+                <div class="flask-measurement-ruler">
+                  <span>100%</span>
+                  <span>75%</span>
+                  <span>50%</span>
+                  <span>25%</span>
+                  <span>0%</span>
+                </div>
+              </div>
+              <div class="flask-bottom-glow"></div>
+            </div>
+
+            <!-- Side HUD Telemetry Reads -->
+            <div class="chamber-telemetry-specs">
+              <div class="hud-spec-item">
+                <span class="spec-label">TURBIDITY SENSOR VOLTAGE</span>
+                <span class="spec-value highlight-cyan" id="sensorVoltageValue">4.12 V</span>
+                <div class="spec-bar-track"><div class="spec-bar-fill" id="voltageBar" style="width: 82%;"></div></div>
+              </div>
+
+              <div class="hud-spec-item">
+                <span class="spec-label">DISSOLVED SOLIDS DENSITY</span>
+                <span class="spec-value highlight-purple" id="tdsDensityValue">Normal (0.00 mg/L)</span>
+                <div class="spec-bar-track"><div class="spec-bar-fill purple" id="tdsBar" style="width: 15%;"></div></div>
+              </div>
+
+              <div class="hud-spec-item">
+                <span class="spec-label">COMMUNITY SYMPTOM INDEX</span>
+                <span class="spec-value highlight-amber" id="symptomIndexValue">Moderate (Nerul Ward)</span>
+                <div class="spec-bar-track"><div class="spec-bar-fill amber" id="symptomBar" style="width: 38%;"></div></div>
+              </div>
+
+              <div class="hud-spec-item">
+                <span class="spec-label">STREAM TIMING</span>
+                <span class="spec-value highlight-text" id="streamTimestamp">Syncing now…</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Cell 2: TDS Metric Card -->
+        <div class="bento-cell metric-card glass-card" id="metricTds">
+          <div class="metric-top">
+            <span class="metric-hud-label">CONDUCTIVITY / TDS</span>
+            <span class="metric-badge-icon">⚡</span>
+          </div>
+          <div class="metric-middle">
+            <div class="metric-value-row">
+              <span class="metric-digit" id="tdsValue">—</span>
+              <span class="metric-unit">mg/L</span>
+            </div>
+            <div class="metric-trend" id="tdsTrend">
+              <span class="trend-arrow">▲</span> Normal Safe Band
+            </div>
+          </div>
+          <div class="metric-bottom">
+            <div class="metric-label">Total Dissolved Solids</div>
+            <div class="metric-sub" id="tdsSub">ESP32 Analog Probe</div>
+          </div>
+          <div class="metric-corner-accent"></div>
+        </div>
+
+        <!-- Bento Cell 3: Turbidity Metric Card -->
+        <div class="bento-cell metric-card glass-card" id="metricTurbidity">
+          <div class="metric-top">
+            <span class="metric-hud-label">LIGHT SCATTERING</span>
+            <span class="metric-badge-icon">🌊</span>
+          </div>
+          <div class="metric-middle">
+            <div class="metric-value-row">
+              <span class="metric-digit" id="turbidityValue">—</span>
+              <span class="metric-unit">NTU</span>
+            </div>
+            <div class="metric-trend" id="turbidityTrend">
+              <span class="trend-arrow">●</span> WHO Standard: &lt; 5.0 NTU
+            </div>
+          </div>
+          <div class="metric-bottom">
+            <div class="metric-label">Water Turbidity Index</div>
+            <div class="metric-sub" id="turbiditySub">Optical Photodiode</div>
+          </div>
+          <div class="metric-corner-accent"></div>
+        </div>
+
+        <!-- Bento Cell 4: Stage 1 Potability -->
+        <div class="bento-cell metric-card glass-card" id="metricPotability">
+          <div class="metric-top">
+            <span class="metric-hud-label">STAGE 1 ML CLASSIFIER</span>
+            <span class="metric-badge-icon">🧪</span>
+          </div>
+          <div class="metric-middle">
+            <div class="metric-value-row">
+              <span class="metric-digit" id="potabilityValue">—</span>
+            </div>
+            <div class="metric-confidence-pill" id="potabilityConfidencePill">
+              <span class="conf-dot"></span> <span id="potabilitySub">Predicting…</span>
+            </div>
+          </div>
+          <div class="metric-bottom">
+            <div class="metric-label">Water Potability Grade</div>
+            <div class="metric-sub">Random Forest (83% Test F1)</div>
+          </div>
+          <div class="metric-corner-accent"></div>
+        </div>
+
+        <!-- Bento Cell 5: Stage 2 Outbreak Risk -->
+        <div class="bento-cell metric-card glass-card" id="metricOutbreak">
+          <div class="metric-top">
+            <span class="metric-hud-label">STAGE 2 EPIDEMIC MODEL</span>
+            <span class="metric-badge-icon">⚠️</span>
+          </div>
+          <div class="metric-middle">
+            <div class="metric-value-row">
+              <span class="metric-digit" id="outbreakValue">—</span>
+            </div>
+            <div class="metric-level-tag" id="outbreakLevelTag">
+              <span id="outbreakSub">Evaluating Stream</span>
+            </div>
+          </div>
+          <div class="metric-bottom">
+            <div class="metric-label">Clinical Outbreak Hazard</div>
+            <div class="metric-sub">Multi-Source Fusion Engine</div>
+          </div>
+          <div class="metric-corner-accent"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 2: INTERACTIVE 2-STAGE ML PIPELINE ARCHITECTURE
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="pipeline" class="section">
+      <div class="section-header">
+        <div class="header-pre-badge">INTELLIGENCE ARCHITECTURE</div>
+        <h2>Dual-Stage Machine Learning Fusion Pipeline</h2>
+        <p>How physical ESP32 telemetry combines with community epidemiological surveillance to diagnose risk before outbreaks spread</p>
+      </div>
+
+      <div class="pipeline-card glass-card">
+        <div class="pipeline-grid">
+
+          <!-- Stage Node 1: Physical IoT Layer -->
+          <div class="pipeline-node active" id="pipeNode1">
+            <div class="node-badge">INPUT 01</div>
+            <div class="node-icon">📡</div>
+            <h4>ESP32 IoT Sensors</h4>
+            <p>Optical Turbidity & Analog TDS measurements sampled every 5 seconds</p>
+            <div class="node-metrics-tag">
+              <span>Firebase RTDB</span>
+              <span class="pulse-status">ACTIVE</span>
+            </div>
+          </div>
+
+          <!-- Connector 1 -->
+          <div class="pipeline-connector">
+            <div class="connector-line"></div>
+            <div class="connector-pulse"></div>
+            <span class="connector-label">Feature Extraction</span>
+          </div>
+
+          <!-- Stage Node 2: Potability RF -->
+          <div class="pipeline-node active" id="pipeNode2">
+            <div class="node-badge">STAGE 1 ML</div>
+            <div class="node-icon">🧪</div>
+            <h4>Potability Classifier</h4>
+            <p>Trained on 3,276 water samples. Predicts chemical & physical potability probability</p>
+            <div class="node-metrics-tag">
+              <span id="pipePotResult">Potable: 61.2%</span>
+            </div>
+          </div>
+
+          <!-- Connector 2 -->
+          <div class="pipeline-connector">
+            <div class="connector-line"></div>
+            <div class="connector-pulse"></div>
+            <span class="connector-label">Chain Inference</span>
+          </div>
+
+          <!-- Stage Node 3: Clinical Layer (Parallel Branch) -->
+          <div class="pipeline-node active" id="pipeNode3">
+            <div class="node-badge">INPUT 02</div>
+            <div class="node-icon">📋</div>
+            <h4>Community Health</h4>
+            <p>Google Forms survey stream via Firestore. Captures Diarrhoea, Fever, Nausea, Cramps</p>
+            <div class="node-metrics-tag">
+              <span id="pipeSymptomResult">Nerul: Moderate</span>
+            </div>
+          </div>
+
+          <!-- Connector 3 -->
+          <div class="pipeline-connector">
+            <div class="connector-line"></div>
+            <div class="connector-pulse"></div>
+            <span class="connector-label">Fusion Vector</span>
+          </div>
+
+          <!-- Stage Node 4: Outbreak Predictor -->
+          <div class="pipeline-node highlight active" id="pipeNode4">
+            <div class="node-badge gold">STAGE 2 ML</div>
+            <div class="node-icon">🚨</div>
+            <h4>Outbreak Risk Engine</h4>
+            <p>Chains water quality potability with symptom severity matrices to output real-time probability</p>
+            <div class="node-metrics-tag gold">
+              <span id="pipeOutbreakResult">Low Risk (12.4%)</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 3: SENSOR MONITOR
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="sensors" class="section">
+      <div class="section-header">
+        <div class="header-pre-badge">HARDWARE TELEMETRY</div>
+        <h2>ESP32 Edge Stream & Time Series</h2>
+        <p>Continuous real-time stream from Firebase RTDB path <code>/water_monitor/live</code></p>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>TDS Conductivity Trend</h3>
+              <span class="chart-subtitle">Real-time total dissolved solids concentration</span>
+            </div>
+            <span class="live-pill"><span class="dot-beacon"></span> LIVE</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="tdsChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Turbidity Attenuation Trend</h3>
+              <span class="chart-subtitle">Optical NTU scattering levels over time</span>
+            </div>
+            <span class="live-pill"><span class="dot-beacon"></span> LIVE</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="turbidityChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Time Telemetry Data Log Table -->
+      <div class="table-container glass-card">
+        <div class="table-card-header">
+          <div>
+            <h3>Recent Hardware Telemetry Records</h3>
+            <span class="table-subtitle">Indexed live packets from RTDB</span>
+          </div>
+          <span class="table-counter-tag">AUTO-REFRESH: 4s</span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" id="sensorTable">
+            <thead>
+              <tr>
+                <th>TIMESTAMP</th>
+                <th>DEVICE NODE</th>
+                <th>TDS MAX (mg/L)</th>
+                <th>TDS MIN (mg/L)</th>
+                <th>TURBIDITY (NTU)</th>
+                <th>PREDICTED STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="sensorTableBody">
+              <tr><td colspan="6" class="table-empty-row">Streaming hardware packets…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 4: COMMUNITY HEALTH & WARD SURVEILLANCE
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="surveillance" class="section">
+      <div class="section-header">
+        <div class="header-pre-badge">EPIDEMIOLOGICAL SURVEILLANCE</div>
+        <h2>Community Health Reports & Ward Surveillance</h2>
+        <p>Real-time citizen symptoms collected via Google Forms and synced through Cloud Firestore</p>
+      </div>
+
+      <!-- Ward Surveillance Matrix Cards -->
+      <div class="ward-grid">
+        <div class="ward-card glass-card active-cluster">
+          <div class="ward-top">
+            <span class="ward-name">📍 Nerul (Active Incident)</span>
+            <span class="ward-badge-alert">LIVE SURVEY INGESTION</span>
+          </div>
+          <div class="ward-body">
+            <div class="ward-stat-row">
+              <span>Reported Symptoms:</span>
+              <strong>Abdominal Pain, Fever</strong>
+            </div>
+            <div class="ward-stat-row">
+              <span>Severity Level:</span>
+              <strong class="color-amber">Moderate</strong>
+            </div>
+            <div class="ward-stat-row">
+              <span>Surveillance Status:</span>
+              <span class="color-cyan">Targeted Sampling Active</span>
+            </div>
+          </div>
+          <div class="ward-bar"><div class="ward-bar-fill" style="width: 65%;"></div></div>
+        </div>
+
+        <div class="ward-card glass-card">
+          <div class="ward-top">
+            <span class="ward-name">📍 Belapur Sector 15</span>
+            <span class="ward-badge-safe">SAFE</span>
+          </div>
+          <div class="ward-body">
+            <div class="ward-stat-row">
+              <span>Reported Symptoms:</span>
+              <strong>None Reported</strong>
+            </div>
+            <div class="ward-stat-row">
+              <span>Severity Level:</span>
+              <strong class="color-green">Normal</strong>
+            </div>
+            <div class="ward-stat-row">
+              <span>Surveillance Status:</span>
+              <span class="color-green">Safe Baseline</span>
+            </div>
+          </div>
+          <div class="ward-bar safe"><div class="ward-bar-fill safe" style="width: 10%;"></div></div>
+        </div>
+
+        <div class="ward-card glass-card">
+          <div class="ward-top">
+            <span class="ward-name">📍 Vashi Sector 9</span>
+            <span class="ward-badge-safe">SAFE</span>
+          </div>
+          <div class="ward-body">
+            <div class="ward-stat-row">
+              <span>Reported Symptoms:</span>
+              <strong>Mild Nausea (Isolated)</strong>
+            </div>
+            <div class="ward-stat-row">
+              <span>Severity Level:</span>
+              <strong class="color-cyan">Mild</strong>
+            </div>
+            <div class="ward-stat-row">
+              <span>Surveillance Status:</span>
+              <span class="color-cyan">Monitored</span>
+            </div>
+          </div>
+          <div class="ward-bar"><div class="ward-bar-fill" style="width: 25%;"></div></div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Average Symptom Severity</h3>
+              <span class="chart-subtitle">Aggregated Clinical Ratings (0–3 Scale)</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="symptomBarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Symptom Fingerprint Profile</h3>
+              <span class="chart-subtitle">Multi-axial epidemiological radar distribution</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="symptomRadarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container glass-card">
+        <div class="table-card-header">
+          <div>
+            <h3>Recent Ingested Google Forms Reports</h3>
+            <span class="table-subtitle">Firestore collection <code>symptom_reports</code></span>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" id="symptomTable">
+            <thead>
+              <tr>
+                <th>TIMESTAMP</th>
+                <th>WARD LOCATION</th>
+                <th>🤢 NAUSEA</th>
+                <th>🌡️ FEVER</th>
+                <th>🏜️ DEHYDRATION</th>
+                <th>🌀 CRAMPS</th>
+                <th>🚽 DIARRHOEA</th>
+                <th>COMPOSITE SCORE</th>
+              </tr>
+            </thead>
+            <tbody id="symptomTableBody">
+              <tr><td colspan="8" class="table-empty-row">Ingesting community reports…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 5: OUTBREAK RISK ENGINE
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="analysis" class="section">
+      <div class="section-header">
+        <div class="header-pre-badge">DIAGNOSTIC ENGINE</div>
+        <h2>Machine Learning Outbreak Analysis</h2>
+        <p>Dynamic risk assessment generated by two-stage Random Forest ensemble</p>
+      </div>
+
+      <div class="analysis-grid">
+        <!-- SVG Radial Gauge Card -->
+        <div class="chart-card gauge-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Outbreak Probability Gauge</h3>
+              <span class="chart-subtitle">Real-time fusion classification score</span>
+            </div>
+          </div>
+          <div class="gauge-centerpiece">
+            <div class="gauge-container" id="gaugeContainer"></div>
+            <div class="risk-label" id="riskLabel">—</div>
+          </div>
+          <div class="risk-advisory-box">
+            <div class="advisory-title">
+              <span>🩺 EPIDEMIOLOGICAL ADVICE</span>
+            </div>
+            <p class="risk-advice" id="riskAdvice">Analyzing latest telemetry and symptoms…</p>
+          </div>
+        </div>
+
+        <!-- Feature Importance Chart -->
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Random Forest Feature Weights</h3>
+              <span class="chart-subtitle">Relative Gini-importance for outbreak risk prediction</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="importanceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- What-If Analysis Presets -->
+      <div class="chart-card full-width glass-card">
+        <div class="chart-card-header">
+          <div>
+            <h3>What-If Simulation Sandbox</h3>
+            <span class="chart-subtitle">Model sensitivity across environmental extremes</span>
+          </div>
+        </div>
+        <div class="whatif-grid" id="whatifGrid">
+          <div class="whatif-card">
+            <div class="whatif-title">Simulating…</div>
+            <div class="whatif-value">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 6: INTERACTIVE SIMULATION LAB
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="predict" class="section">
+      <div class="section-header">
+        <div class="header-pre-badge">TESTING SANDBOX</div>
+        <h2>Interactive Scenario Testing Lab</h2>
+        <p>Manually adjust water chemistry & symptom thresholds to inspect the model's decision boundary</p>
+      </div>
+
+      <!-- Preset Scenarios Quick Bar -->
+      <div class="preset-scenarios-row">
+        <span class="preset-label">PRESET SCENARIOS:</span>
+        <button class="preset-chip" onclick="applyPreset('clean')">💧 Pristine RO Drinking Water</button>
+        <button class="preset-chip" onclick="applyPreset('monsoon')">🌧️ Monsoon Silt & Turbidity Spike</button>
+        <button class="preset-chip" onclick="applyPreset('cholera')">🚨 Severe Diarrhoea Cluster</button>
+        <button class="preset-chip" onclick="applyPreset('industrial')">🏭 High Dissolved Solids Runoff</button>
+      </div>
+
+      <div class="predict-grid">
+        <div class="chart-card predict-form glass-card">
+          <div class="form-section-title">
+            <span>💧 WATER SENSOR PARAMETERS</span>
+          </div>
+
+          <div class="form-group">
+            <div class="slider-label-row">
+              <label for="inputTdsMax">Max Conductivity / TDS (µS/cm)</label>
+              <span class="slider-value" id="valTdsMax">100</span>
+            </div>
+            <input type="range" id="inputTdsMax" min="0" max="5000" value="100" step="10">
+          </div>
+
+          <div class="form-group">
+            <div class="slider-label-row">
+              <label for="inputTdsMin">Min Conductivity / TDS (µS/cm)</label>
+              <span class="slider-value" id="valTdsMin">30</span>
+            </div>
+            <input type="range" id="inputTdsMin" min="0" max="5000" value="30" step="10">
+          </div>
+
+          <div class="form-group">
+            <div class="slider-label-row">
+              <label for="inputTurbidity">Turbidity (NTU)</label>
+              <span class="slider-value" id="valTurbidity">8.0</span>
+            </div>
+            <input type="range" id="inputTurbidity" min="0" max="100" value="8" step="0.5">
+          </div>
+
+          <div class="form-section-title" style="margin-top: 24px;">
+            <span>🏥 CLINICAL SYMPTOM SEVERITY</span>
+          </div>
+
+          <div class="symptom-slider-grid">
+            <div class="form-group">
+              <div class="slider-label-row">
+                <label for="inputNausea">🤢 Nausea</label>
+                <span class="slider-value" id="valNausea">None</span>
+              </div>
+              <input type="range" id="inputNausea" min="0" max="3" value="0" step="1">
+            </div>
+
+            <div class="form-group">
+              <div class="slider-label-row">
+                <label for="inputFever">🌡️ Fever</label>
+                <span class="slider-value" id="valFever">None</span>
+              </div>
+              <input type="range" id="inputFever" min="0" max="3" value="0" step="1">
+            </div>
+
+            <div class="form-group">
+              <div class="slider-label-row">
+                <label for="inputDehydration">🏜️ Dehydration</label>
+                <span class="slider-value" id="valDehydration">None</span>
+              </div>
+              <input type="range" id="inputDehydration" min="0" max="3" value="0" step="1">
+            </div>
+
+            <div class="form-group">
+              <div class="slider-label-row">
+                <label for="inputCramps">🌀 Cramps</label>
+                <span class="slider-value" id="valCramps">None</span>
+              </div>
+              <input type="range" id="inputCramps" min="0" max="3" value="0" step="1">
+            </div>
+
+            <div class="form-group full-width-sm">
+              <div class="slider-label-row">
+                <label for="inputDiarrhoea">🚽 Diarrhoea</label>
+                <span class="slider-value" id="valDiarrhoea">None</span>
+              </div>
+              <input type="range" id="inputDiarrhoea" min="0" max="3" value="0" step="1">
+            </div>
+          </div>
+
+          <button class="btn-predict glow-btn" id="btnPredict">
+            <span class="btn-icon">⚡</span>
+            <span>RUN PREDICTIVE INFERENCE</span>
+          </button>
+        </div>
+
+        <div class="chart-card predict-result glass-card" id="predictResult">
+          <div class="predict-result-placeholder">
+            <div class="radar-scan-anim"></div>
+            <h3>Inference Ready</h3>
+            <p class="empty-state">Select a preset or adjust the telemetry sliders to execute the dual-stage ML classification pipeline.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SECTION 7: DATA LAB & MODEL ACCURACY
+         ════════════════════════════════════════════════════════════════════ -->
+    <section id="datalab" class="section">
+      <div class="section-header">
+        <div class="header-pre-badge">DATASET METRICS</div>
+        <h2>Machine Learning Model Benchmarks</h2>
+        <p>Empirical statistics and performance telemetry across training corpuses</p>
+      </div>
+
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card glass-card">
+          <div class="stat-icon">🧪</div>
+          <div class="stat-value" id="statSamples">—</div>
+          <div class="stat-label">Water Samples Corpus</div>
+          <div class="stat-sub">Water potability dataset</div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon">💧</div>
+          <div class="stat-value" id="statPotable">—</div>
+          <div class="stat-label">Baseline Potability Rate</div>
+          <div class="stat-sub">Positive sample ratio</div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon">🏥</div>
+          <div class="stat-value" id="statReports">—</div>
+          <div class="stat-label">Epidemiology Records</div>
+          <div class="stat-sub">Clinical community surveys</div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-value" id="statOutbreak">—</div>
+          <div class="stat-label">Historical Outbreak Rate</div>
+          <div class="stat-sub">Classified outbreak events</div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Potability Model Feature Correlation</h3>
+              <span class="chart-subtitle">Random Forest feature importance for potable water classification</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="potabilityImportanceChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card glass-card">
+          <div class="chart-card-header">
+            <div>
+              <h3>Outbreak vs. Non-Outbreak Symptom Signatures</h3>
+              <span class="chart-subtitle">Normalized feature divergence during epidemic events</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="outbreakCompareChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       FOOTER
+       ══════════════════════════════════════════════════════════════════════ -->
+  <footer class="footer-hud">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">💧 NeerNirikshak Telemetry</div>
+        <p>Smart Public Health Defense powered by IoT Edge Computing and Distributed Machine Learning</p>
+      </div>
+      <div class="footer-tags">
+        <span class="tech-tag">ESP32 Hardware</span>
+        <span class="tech-tag">Firebase RTDB</span>
+        <span class="tech-tag">Cloud Firestore</span>
+        <span class="tech-tag">scikit-learn 1.6</span>
+        <span class="tech-tag">Flask Microservices</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>NeerNirikshak IoT & AI Platform · Autonomous Health Surveillance</span>
+      <span class="footer-live-clock" id="footerClock">00:00:00 UTC</span>
+    </div>
+  </footer>
+
+  <!-- Main Application Logic -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

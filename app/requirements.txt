@@ -1,0 +1,7 @@
+flask>=3.0
+flask-cors
+firebase-admin>=6.0
+scikit-learn==1.6.1
+pandas
+numpy
+joblib
